@@ -1,0 +1,6 @@
+node_modules
+.env
+*-dev.log
+*-dev.err.log
+*-direct.log
+*-direct.err.log

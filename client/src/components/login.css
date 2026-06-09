@@ -1,0 +1,48 @@
+/* smooth input glow */
+input:focus {
+  border: 1px solid #a855f7;
+  box-shadow: 0 0 15px rgba(168,85,247,0.6);
+}
+
+/* ripple effect */
+.ripple {
+  position: absolute;
+  width: 0;
+  height: 0;
+  background: rgba(255,255,255,0.3);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: rippleEffect 0.6s linear;
+}
+
+@keyframes rippleEffect {
+  to {
+    width: 200px;
+    height: 200px;
+    opacity: 0;
+  }
+}
+
+/* google button glow */
+.google-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(168,85,247,0.4);
+  background: transparent;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.google-btn:hover {
+  box-shadow: 0 0 25px rgba(168,85,247,0.9),
+              0 0 50px rgba(168,85,247,0.6);
+  border-color: #a855f7;
+}
