@@ -9,7 +9,7 @@ import Editor from './pages/Editor'
 import Pricing from './pages/Pricing'
 import useGetCurrentUser from './hooks/useGetCurrentUser.jsx'
 
-export const serverUrl = ''
+export const serverUrl = import.meta.env.VITE_API_URL || ''
 
 // Protected route — redirects to /login if not logged in
 function Protected({ children }) {
