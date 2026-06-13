@@ -15,12 +15,15 @@ const port = process.env.PORT || 3002
 app.use(express.json())
 app.use(cookieParser())
 app.use(cors({
-  origin:      process.env.CLIENT_URL || "http://localhost:5173",
+  origin: [
+    'http://localhost:5173',
+    'https://genweb-ai-delta.vercel.app',
+    'https://genwebai-dca16.web.app',
+    process.env.CLIENT_URL,
+  ].filter(Boolean),
   credentials: true,
 }))
 
-// ── Public: serve deployed sites at /s/:slug ─────────────────────────────────
-// Must be BEFORE the /api routes so Express doesn't confuse them
 app.get("/s/:slug", serveDeployedSite)
 
 app.use("/api/auth",    authRouter)
