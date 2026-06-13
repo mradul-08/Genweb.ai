@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { auth, provider } from "../firebase"
 import { useDispatch } from 'react-redux'
 import { setUserData } from '../redux/userSlice'
-import { signInWithPopup } from "firebase/auth"
+import { signInWithRedirect, getRedirectResult } from "firebase/auth"
 import { serverUrl } from '../App'
 
 /* ══════════════════════════════════════
@@ -26,7 +26,6 @@ function AnimatedBackground() {
     resize()
     window.addEventListener('resize', resize)
 
-    // Floating orb nodes
     const nodes = Array.from({ length: 60 }, () => ({
       x: Math.random() * window.innerWidth,
       y: Math.random() * window.innerHeight,
@@ -37,7 +36,6 @@ function AnimatedBackground() {
       opacity: Math.random() * 0.6 + 0.2,
     }))
 
-    // Large background orbs
     const orbs = [
       { x: 0.15, y: 0.25, r: 320, color: 'rgba(139,92,246,0.12)', speed: 0.0008 },
       { x: 0.75, y: 0.65, r: 280, color: 'rgba(59,130,246,0.10)', speed: 0.0012 },
@@ -49,7 +47,6 @@ function AnimatedBackground() {
       const W = canvas.width, H = canvas.height
       ctx.clearRect(0, 0, W, H)
 
-      // Background gradient
       const bg = ctx.createLinearGradient(0, 0, W, H)
       bg.addColorStop(0, '#040408')
       bg.addColorStop(0.5, '#06040f')
@@ -57,7 +54,6 @@ function AnimatedBackground() {
       ctx.fillStyle = bg
       ctx.fillRect(0, 0, W, H)
 
-      // Animated grid
       ctx.save()
       ctx.strokeStyle = 'rgba(139,92,246,0.04)'
       ctx.lineWidth = 1
@@ -71,7 +67,6 @@ function AnimatedBackground() {
       }
       ctx.restore()
 
-      // Pulsing background orbs
       orbs.forEach((orb, i) => {
         const ox = orb.x * W + Math.sin(t * orb.speed * 1000 + i) * 80
         const oy = orb.y * H + Math.cos(t * orb.speed * 800 + i) * 60
@@ -85,7 +80,6 @@ function AnimatedBackground() {
         ctx.fill()
       })
 
-      // Update & draw nodes
       nodes.forEach(n => {
         n.x += n.vx; n.y += n.vy
         if (n.x < 0 || n.x > W) n.vx *= -1
@@ -99,7 +93,6 @@ function AnimatedBackground() {
         ctx.globalAlpha = 1
       })
 
-      // Draw connections between nearby nodes
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
           const dx = nodes[i].x - nodes[j].x
@@ -116,7 +109,6 @@ function AnimatedBackground() {
         }
       }
 
-      // 3D rotating ring
       const cx = W * 0.15, cy = H * 0.5
       const ringR = 140
       ctx.save()
@@ -134,7 +126,6 @@ function AnimatedBackground() {
         ctx.stroke()
       }
 
-      // Central glowing sphere
       const sphereGrad = ctx.createRadialGradient(cx-30, cy-30, 10, cx, cy, 80)
       sphereGrad.addColorStop(0, 'rgba(200,170,255,0.9)')
       sphereGrad.addColorStop(0.3, 'rgba(139,92,246,0.7)')
@@ -145,14 +136,12 @@ function AnimatedBackground() {
       ctx.fillStyle = sphereGrad
       ctx.fill()
 
-      // Sphere aurora
       const aurora1 = ctx.createRadialGradient(cx+30, cy+20, 0, cx+30, cy+20, 60)
       aurora1.addColorStop(0, `rgba(56,189,248,${0.2 + Math.sin(t)*0.1})`)
       aurora1.addColorStop(1, 'rgba(0,0,0,0)')
       ctx.beginPath(); ctx.arc(cx+30, cy+20, 60, 0, Math.PI*2)
       ctx.fillStyle = aurora1; ctx.fill()
 
-      // Orbiting dots
       for (let i = 0; i < 5; i++) {
         const a = t * 0.8 + (i/5)*Math.PI*2
         const orbitX = cx + Math.cos(a) * 110
@@ -194,6 +183,36 @@ export default function Login() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
+  // ── Handle Google redirect result on page load ──
+  useEffect(() => {
+    setGoogleLoading(true)
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (!result) { setGoogleLoading(false); return }
+        const user = result.user
+        const response = await fetch(`${serverUrl}/api/auth/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            name: user.displayName,
+            email: user.email,
+            avatar: user.photoURL,
+          }),
+        })
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.message)
+        dispatch(setUserData(data.user))
+        navigate('/dashboard')
+      })
+      .catch(err => {
+        if (err.code !== 'auth/popup-closed-by-user') {
+          setError(err.message.replace('Firebase: ', ''))
+        }
+        setGoogleLoading(false)
+      })
+  }, [])
+
   const handleEmailAuth = async () => {
     if (!email.trim() || !password.trim()) { setError('Please fill in all fields.'); return }
     if (!isLogin && !name.trim()) { setError('Please enter your name.'); return }
@@ -224,23 +243,13 @@ export default function Login() {
   }
 
   const handleGoogleAuth = async () => {
-    setError(''); setGoogleLoading(true)
+    setError('')
+    setGoogleLoading(true)
     try {
-      const result = await signInWithPopup(auth, provider)
-      const user = result.user
-      const response = await fetch(`${serverUrl}/api/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ name: user.displayName, email: user.email, avatar: user.photoURL }),
-      })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.message)
-      dispatch(setUserData(data.user))
-      navigate('/dashboard')
+      await signInWithRedirect(auth, provider)
+      // page will redirect — no code runs after this
     } catch (err) {
-      if (err.code !== 'auth/popup-closed-by-user') setError(err.message.replace('Firebase: ',''))
-    } finally {
+      setError(err.message.replace('Firebase: ', ''))
       setGoogleLoading(false)
     }
   }
@@ -317,23 +326,20 @@ export default function Login() {
         @media (max-width:480px) { .form-card{padding:28px 20px!important; border-radius:20px!important} }
       `}</style>
 
-      {/* 3D Animated Canvas */}
       <AnimatedBackground />
 
-      {/* ── LEFT DECORATIVE PANEL ── */}
+      {/* ── LEFT PANEL ── */}
       <div className="left-panel" style={{
         width: '50%', position: 'relative', zIndex: 10,
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         padding: '60px 40px',
       }}>
-        {/* Logo top-left */}
         <Link to="/" style={{ position:'absolute', top:32, left:40, textDecoration:'none', display:'flex', alignItems:'center', gap:8 }}>
           <div style={{ width:34, height:34, borderRadius:11, background:'linear-gradient(135deg,#8b5cf6,#3b82f6)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, boxShadow:'0 0 24px rgba(139,92,246,0.5)' }}>✦</div>
           <span style={{ fontSize:18, fontWeight:800, letterSpacing:'-0.02em', background:'linear-gradient(90deg,#fff,#a78bfa)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>GenWeb.ai</span>
         </Link>
 
-        {/* Main text content */}
         <motion.div
           initial={{ opacity:0, x:-30 }}
           animate={{ opacity:1, x:0 }}
@@ -361,7 +367,6 @@ export default function Login() {
             Describe your vision in plain English. Our AI crafts a production-ready website in seconds — no code needed.
           </p>
 
-          {/* Feature pills */}
           <div style={{ display:'flex', flexWrap:'wrap', gap:10, justifyContent:'center' }}>
             {[
               { icon:'⚡', text:'10 second builds', color:'#a78bfa' },
@@ -389,7 +394,6 @@ export default function Login() {
             ))}
           </div>
 
-          {/* Stats */}
           <motion.div
             initial={{ opacity:0, y:20 }}
             animate={{ opacity:1, y:0 }}
@@ -419,14 +423,6 @@ export default function Login() {
         alignItems:'center', justifyContent:'center',
         padding:'clamp(20px,4vw,60px)',
       }}>
-        {/* Mobile logo */}
-        <div style={{ display:'none', marginBottom:28 }} className="mobile-logo">
-          <Link to="/" style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:8 }}>
-            <div style={{ width:30, height:30, borderRadius:9, background:'linear-gradient(135deg,#8b5cf6,#3b82f6)', display:'flex', alignItems:'center', justifyContent:'center' }}>✦</div>
-            <span style={{ fontSize:16, fontWeight:800, background:'linear-gradient(90deg,#fff,#a78bfa)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>GenWeb.ai</span>
-          </Link>
-        </div>
-
         <AnimatePresence mode="wait">
           <motion.div
             key={isLogin ? 'l':'s'}
@@ -445,9 +441,7 @@ export default function Login() {
               position:'relative', overflow:'hidden',
             }}
           >
-            {/* Top shimmer line */}
             <div style={{ position:'absolute', top:0, left:'15%', right:'15%', height:1, background:'linear-gradient(90deg,transparent,rgba(139,92,246,0.6),rgba(99,102,241,0.4),transparent)' }} />
-            {/* Corner glow */}
             <div style={{ position:'absolute', top:-60, right:-60, width:180, height:180, borderRadius:'50%', background:'radial-gradient(circle,rgba(139,92,246,0.12),transparent 70%)', pointerEvents:'none' }} />
 
             {/* Tabs */}
@@ -490,7 +484,7 @@ export default function Login() {
               )}
             </AnimatePresence>
 
-            {/* Name */}
+            {/* Name field */}
             <AnimatePresence>
               {!isLogin && (
                 <motion.div
@@ -635,7 +629,6 @@ export default function Login() {
   )
 }
 
-/* ── Small helpers ── */
 function FieldLabel({ children, style }) {
   return (
     <label style={{ fontSize:11.5, color:'rgba(255,255,255,0.38)', marginBottom:8, display:'block', fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', ...style }}>
