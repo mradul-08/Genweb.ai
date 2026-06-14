@@ -3,7 +3,7 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: "genwebai-dca16.firebaseapp.com",
+  authDomain: "genweb-ai-delta.vercel.app",
   projectId: "genwebai-dca16",
   storageBucket: "genwebai-dca16.firebasestorage.app",
   messagingSenderId: "350304621044",
