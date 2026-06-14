@@ -1,6 +1,8 @@
-import React from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
-import { useSelector } from 'react-redux'
+import React, { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom"
+import { useSelector, useDispatch } from 'react-redux'
+import { getRedirectResult } from "firebase/auth"
+import { auth } from "./firebase"
 import Home from './pages/Home'
 import Login from './components/LoginModels'
 import Dashboard from './pages/Dashboard'
@@ -8,14 +10,12 @@ import Generate from './pages/Generate'
 import Editor from './pages/Editor'
 import Pricing from './pages/Pricing'
 import useGetCurrentUser from './hooks/useGetCurrentUser.jsx'
+import { setUserData } from './redux/userSlice'
 
 export const serverUrl = import.meta.env.VITE_API_URL || ''
 
-// Protected route — redirects to /login if not logged in
 function Protected({ children }) {
   const { userData, authChecked } = useSelector(s => s.user)
-
-  // Don't redirect until we've checked auth
   if (!authChecked) {
     return (
       <div style={{
@@ -32,21 +32,50 @@ function Protected({ children }) {
       </div>
     )
   }
-
   if (!userData) return <Navigate to="/login" replace />
   return children
 }
 
-// Public route — redirects to /dashboard if already logged in
 function PublicOnly({ children }) {
   const { userData, authChecked } = useSelector(s => s.user)
-  if (!authChecked) return null  // wait silently
+  if (!authChecked) return null
   if (userData) return <Navigate to="/dashboard" replace />
   return children
 }
 
 function AppContent() {
   useGetCurrentUser()
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (!result?.user) return
+        const user = result.user
+        try {
+          const response = await fetch(`${serverUrl}/api/auth/google`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              name: user.displayName,
+              email: user.email,
+              avatar: user.photoURL
+            }),
+          })
+          const data = await response.json()
+          if (response.ok) {
+            dispatch(setUserData(data.user))
+            navigate('/dashboard', { replace: true })
+          }
+        } catch (e) {
+          console.error('Google redirect auth error:', e)
+        }
+      })
+      .catch((e) => console.error('getRedirectResult error:', e))
+  }, [])
+
   return (
     <Routes>
       <Route path="/"          element={<Home />} />
