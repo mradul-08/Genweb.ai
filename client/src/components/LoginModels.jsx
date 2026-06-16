@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { auth, provider } from "../firebase"
 import { useDispatch } from 'react-redux'
 import { setUserData } from '../redux/userSlice'
-import { signInWithRedirect } from "firebase/auth"
+import {  signInWithPopup } from "firebase/auth"
 import { serverUrl } from '../App'
 
 function AnimatedBackground() {
@@ -137,17 +137,47 @@ export default function Login() {
   }
 
   const handleGoogleAuth = async () => {
-    setError('')
-    setGoogleLoading(true)
-    try {
-      await signInWithRedirect(auth, provider)
-      // Page redirects to Google — code below won't run
-      // The result is handled in App.jsx via getRedirectResult
-    } catch (err) {
-      setError(err.message.replace('Firebase: ', ''))
-      setGoogleLoading(false)
+  setError("")
+  setGoogleLoading(true)
+
+  try {
+    console.log("GOOGLE BUTTON CLICKED")
+
+    const result = await signInWithPopup(auth, provider)
+
+    console.log("POPUP RESULT =", result)
+
+    const user = result.user
+
+    const response = await fetch(`${serverUrl}/api/auth/google`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        name: user.displayName,
+        email: user.email,
+        avatar: user.photoURL,
+      }),
+    })
+
+    console.log("BACKEND RESPONSE =", response.status)
+
+    const data = await response.json()
+
+    if (response.ok) {
+      dispatch(setUserData(data.user))
+      navigate("/dashboard")
     }
+
+  } catch (err) {
+    console.error("GOOGLE ERROR =", err)
+    setError(err.message)
+  } finally {
+    setGoogleLoading(false)
   }
+}
 
   const handleKey = (e) => { if (e.key === 'Enter') handleEmailAuth() }
   const switchMode = (m) => { setIsLogin(m); setError(''); setName(''); setEmail(''); setPassword('') }
