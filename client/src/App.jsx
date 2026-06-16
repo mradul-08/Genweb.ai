@@ -49,32 +49,39 @@ function AppContent() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (!result?.user) return
-        const user = result.user
-        try {
-          const response = await fetch(`${serverUrl}/api/auth/google`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              name: user.displayName,
-              email: user.email,
-              avatar: user.photoURL
-            }),
-          })
-          const data = await response.json()
-          if (response.ok) {
-            dispatch(setUserData(data.user))
-            navigate('/dashboard', { replace: true })
-          }
-        } catch (e) {
-          console.error('Google redirect auth error:', e)
-        }
-      })
-      .catch((e) => console.error('getRedirectResult error:', e))
-  }, [])
+  getRedirectResult(auth)
+    .then(async (result) => {
+
+      console.log("REDIRECT RESULT =", result)
+
+      if (!result?.user) return
+
+      const user = result.user
+
+      console.log("GOOGLE USER =", user)
+
+      try {
+        const response = await fetch(`${serverUrl}/api/auth/google`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            name: user.displayName,
+            email: user.email,
+            avatar: user.photoURL,
+          }),
+        })
+
+        console.log("BACKEND RESPONSE =", response.status)
+
+      } catch (e) {
+        console.error(e)
+      }
+    })
+    .catch(console.error)
+}, [])
 
   return (
     <Routes>
