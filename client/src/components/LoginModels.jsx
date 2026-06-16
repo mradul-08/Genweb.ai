@@ -141,11 +141,11 @@ export default function Login() {
   setGoogleLoading(true)
 
   try {
-    console.log("GOOGLE BUTTON CLICKED")
+    
 
     const result = await signInWithPopup(auth, provider)
 
-    console.log("POPUP RESULT =", result)
+    
 
     const user = result.user
 
@@ -162,7 +162,7 @@ export default function Login() {
       }),
     })
 
-    console.log("BACKEND RESPONSE =", response.status)
+    
 
     const data = await response.json()
 

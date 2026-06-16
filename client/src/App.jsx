@@ -52,13 +52,13 @@ function AppContent() {
   getRedirectResult(auth)
     .then(async (result) => {
 
-      console.log("REDIRECT RESULT =", result)
+    
 
       if (!result?.user) return
 
       const user = result.user
 
-      console.log("GOOGLE USER =", user)
+    
 
       try {
         const response = await fetch(`${serverUrl}/api/auth/google`, {
@@ -74,7 +74,7 @@ function AppContent() {
           }),
         })
 
-        console.log("BACKEND RESPONSE =", response.status)
+        
 
       } catch (e) {
         console.error(e)
