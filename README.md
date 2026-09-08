@@ -89,8 +89,8 @@ websiteBuilder/
 | UI | Framer Motion, Lucide React, CSS, Tailwind tooling |
 | Backend | Node.js, Express 5 |
 | Database | MongoDB with Mongoose |
-| Authentication | Firebase Google Auth + JWT HTTP-only cookies |
-| AI | OpenAI-compatible provider integrations with fallbacks |
+| Authentication | Firebase Google sign-in + Express JWT HTTP-only cookie sessions |
+| AI generation | Groq, Mistral, ZhipuAI, Cerebras, SambaNova, Cloudflare Workers AI, and OpenRouter with fallback routing |
 | Payments | Razorpay |
 | Hosting | Vercel/Firebase-compatible frontend and Node server deployment |
 
