@@ -678,7 +678,18 @@ export const serveDeployedSite = async (req, res) => {
     }
 
     res.setHeader("Content-Type", "text/html; charset=utf-8")
-    res.setHeader("X-Frame-Options", "SAMEORIGIN")
+
+    // The dashboard renders deployed sites inside a cross-origin iframe.
+    // X-Frame-Options: SAMEORIGIN blocks that preview when the client and
+    // API are deployed on different domains. Allow only our known clients
+    // through CSP instead of allowing arbitrary websites to frame the site.
+    const frameAncestors = [
+      "'self'",
+      process.env.CLIENT_URL,
+      "https://genweb-ai-delta.vercel.app",
+      "https://genwebai-dca16.web.app",
+    ].filter(Boolean).join(" ")
+    res.setHeader("Content-Security-Policy", `frame-ancestors ${frameAncestors}`)
     res.setHeader("Cache-Control", "public, max-age=60")
     return res.send(html)
 
