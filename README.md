@@ -190,9 +190,10 @@ Only values intentionally designed for browser exposure should use the `VITE_` p
 
 ## Author
 
-Built by **Mradul Mayur**.
+Built by **Mrdaul Garg**.
 
 - GitHub: [@mradul-08](https://github.com/mradul-08)
+- Email: [mradulgarg2005@gmail.com](mailto:mradulgarg2005@gmail.com)
 - Project: [GenWeb.ai](https://github.com/mradul-08/Genweb.ai)
 
 ## License
