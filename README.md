@@ -9,8 +9,6 @@ GenWeb.ai is an AI-powered website builder that turns a plain-language prompt in
 - **Web app:** [genweb-ai-delta.vercel.app](https://genweb-ai-delta.vercel.app)
 - **Repository:** [github.com/mradul-08/Genweb.ai](https://github.com/mradul-08/Genweb.ai)
 
-> The live application requires the configured backend, database, authentication, and AI provider environment variables. Do not commit production secrets to this repository.
-
 ## Product presentation
 
 ### Describe
