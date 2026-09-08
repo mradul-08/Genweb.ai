@@ -1,0 +1,9 @@
+{
+  "name": "genweb-ai",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "npm run build --prefix client",
+    "dev": "npm run dev --prefix client"
+  }
+}
